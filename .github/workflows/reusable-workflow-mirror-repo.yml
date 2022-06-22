@@ -1,0 +1,35 @@
+name: "Reusable workflow: mirror Repo"
+
+on:
+  workflow_call:
+    inputs:
+      source_repo_url:
+        type: string
+        required: true
+      destination_repo_name:
+        type: string
+        required: true
+    secrets:
+      PRIVATE_KEY:
+        required: true
+      APP_ID:
+        required: true
+
+jobs:
+  mirror-repo-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+      - name: repo-sync
+        uses: uFahrrad/git-sync@v4
+        env:
+          TOKEN: ${{ steps.generate_token.outputs.token }}
+          DESTINATION_REPO_NAME: ${{ inputs.destination_repo_name }}
+        with:
+          source_repo: ${{ inputs.source_repo_url }}
+          destination_repo: "https://mirror:$TOKEN@github.com/$GITHUB_REPOSITORY_OWNER/$DESTINATION_REPO_NAME"
